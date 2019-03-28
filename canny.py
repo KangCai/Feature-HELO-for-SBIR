@@ -1,4 +1,9 @@
 # coding=utf-8
+"""
+Desc: canny edge detection.
+Author: K. Cai.
+Date: March 2019.
+"""
 
 import scipy.ndimage
 import numpy
@@ -9,12 +14,13 @@ def Canny(img_file, threshold_low=30, threshold_high=100, binary_edge=True):
     :param img_file:
     :param threshold_low:
     :param threshold_high:
+    :param binary_edge:
     :return:
     """
     # Get ndarray of img_file
-    image_ndarray = scipy.ndimage.imread(img_file, flatten=True)
+    ori_image_ndarray = scipy.ndimage.imread(img_file, flatten=True)
     # Gassian filter
-    image_ndarray = _GaussianFilter(image_ndarray)
+    image_ndarray = _GaussianFilter(ori_image_ndarray)
     # Format pixel value
     image_ndarray = _FormatPixelValue(image_ndarray)
     # Sobel gradient
@@ -25,7 +31,7 @@ def Canny(img_file, threshold_low=30, threshold_high=100, binary_edge=True):
     nms = _NonMaximumSuppression(Gm, Gd)
     # Double Thresholding
     edge = _DoubleThresholding(nms, threshold_low, threshold_high, binary_edge)
-    return edge, image_ndarray, nms
+    return edge, ori_image_ndarray, nms
 
 def _GaussianFilter(data, sigma=1.5, window_size=9):
     """
