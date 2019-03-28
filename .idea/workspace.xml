@@ -2,11 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="19394118-9b79-4160-bdf3-417556bda88d" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/images/airplane.png" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/canny.py" afterPath="$PROJECT_DIR$/canny.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/examples.py" afterPath="$PROJECT_DIR$/examples.py" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/HELO.py" afterPath="$PROJECT_DIR$/helo.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/helo.py" afterPath="$PROJECT_DIR$/helo.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -40,21 +37,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="canny.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="canny.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/canny.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-148">
-              <caret line="78" column="17" lean-forward="true" selection-start-line="78" selection-start-column="17" selection-end-line="78" selection-end-column="17" />
+            <state relative-caret-position="342">
+              <caret line="21" column="20" lean-forward="true" selection-start-line="21" selection-start-column="20" selection-end-line="21" selection-end-column="20" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="helo.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="helo.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/helo.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1710">
-              <caret line="90" column="7" lean-forward="true" selection-start-line="90" selection-start-column="7" selection-end-line="90" selection-end-column="7" />
+            <state relative-caret-position="114">
+              <caret line="81" column="29" lean-forward="true" selection-start-line="81" selection-start-column="29" selection-end-line="81" selection-end-column="29" />
               <folding />
             </state>
           </provider>
@@ -99,9 +96,9 @@
         <option value="$PROJECT_DIR$/gradient.py" />
         <option value="$PROJECT_DIR$/HELO.py" />
         <option value="$PROJECT_DIR$/test.py" />
-        <option value="$PROJECT_DIR$/canny.py" />
         <option value="$PROJECT_DIR$/examples.py" />
         <option value="$PROJECT_DIR$/helo.py" />
+        <option value="$PROJECT_DIR$/canny.py" />
       </list>
     </option>
   </component>
@@ -441,14 +438,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/canny.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-148">
-          <caret line="78" column="17" lean-forward="true" selection-start-line="78" selection-start-column="17" selection-end-line="78" selection-end-column="17" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/examples.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="147">
@@ -459,8 +448,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/helo.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1710">
-          <caret line="90" column="7" lean-forward="true" selection-start-line="90" selection-start-column="7" selection-end-line="90" selection-end-column="7" />
+        <state relative-caret-position="114">
+          <caret line="81" column="29" lean-forward="true" selection-start-line="81" selection-start-column="29" selection-end-line="81" selection-end-column="29" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/canny.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="342">
+          <caret line="21" column="20" lean-forward="true" selection-start-line="21" selection-start-column="20" selection-end-line="21" selection-end-column="20" />
           <folding />
         </state>
       </provider>

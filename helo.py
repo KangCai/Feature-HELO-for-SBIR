@@ -91,5 +91,4 @@ def _Histogram(alpha_blocks, K=72):
     """
     hist_blocks = alpha_blocks / (numpy.pi / K)
     hist_blocks = hist_blocks.astype(numpy.int32) * numpy.pi / K
-    print hist_blocks
     return hist_blocks
