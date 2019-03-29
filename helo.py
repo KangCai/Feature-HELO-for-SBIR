@@ -24,7 +24,7 @@ def HELO(img_file, is_sketch, W=25, K=72, th_edge_ratio=0.5):
     # Preprocess.
     if is_sketch:
         # Simple thresholding.
-        edge = 255 * (ori_image_ndarray > 0)
+        edge = 255 * ((255 - ori_image_ndarray) > 0)
     else:
         # Canny edge detection.
         edge, _, _ = canny.Canny(img_file)
@@ -170,7 +170,7 @@ def _ExtractHistFeature(K, alpha_blocks, image_blocks, th_edge_ratio):
     for i in xrange(h_block_num):
         for j in xrange(w_block_num):
             alpha = alpha_blocks[i, j]
-            alpha_bin_idx = int(alpha / (numpy.pi / K))
+            alpha_bin_idx = min(int(alpha / (numpy.pi / K)), K-1)
             # Without filter
             feature_hist[alpha_bin_idx] += 1
             # With filter

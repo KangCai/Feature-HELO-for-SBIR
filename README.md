@@ -5,12 +5,26 @@
 Kang is glad you find me. This is an project for realization of paper "An Improved Histogram of Edge Local 
 Orientations for Sketch-Based Image Retrieval". Any suggestions or comments well be welcome.
 
+---
+
+### Environment
+
+* Python 2
+* numpy
+* scipy
+* pylab
+
+---
+
 ### Note
 
+---
 
-### Usage
+### How to use
 
-### Method
+---
+
+### Module
 
 **Rotational invariance**
 
@@ -19,4 +33,3 @@ Orientations for Sketch-Based Image Retrieval". Any suggestions or comments well
 * 梯度减去极坐标角度
 * 梯度减去PCA第1梯度特征向量
 
-#### 2.

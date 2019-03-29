@@ -8,6 +8,7 @@ Date: March 2019.
 import pylab
 import canny
 import helo
+import numpy
 
 def ExampleCannyEdgeDetection():
     """
@@ -35,9 +36,9 @@ def ExampleHELO():
     :return:
     """
     # Extract
-    img_file = '.\\images\\airplane.png'
+    img_file = '.\\images\\airplane_sketch.png'
     edge, image_ndarray, alpha, histogram, filtered_histogram, feature_helo, feature_filtered_helo = \
-            helo.HELO(img_file, is_sketch=False)
+            helo.HELO(img_file, is_sketch=True)
     print feature_helo
     print feature_filtered_helo
     # Draw
@@ -55,7 +56,30 @@ def ExampleHELO():
     helo.DrawHELO(filtered_histogram)
     pylab.show()
 
+def ExampleDistHELO():
+    """
+    Example of testing performance of HELO.
+    :return:
+    """
+    helo_true = helo.HELO('.\\images\\airplane.png', is_sketch=False)
+    print helo_true[-1]
+    helo_false = helo.HELO('.\\images\\valve.png', is_sketch=False)
+    print helo_false[-1]
+    helo_query_sketch = helo.HELO('.\\images\\airplane_sketch.png', is_sketch=True)
+    print helo_query_sketch[-1]
+    print CalL1Distance(helo_query_sketch[-1],helo_true[-1])
+    print CalL1Distance(helo_query_sketch[-1], helo_false[-1])
+
+def CalL1Distance(feat1, feat2):
+    """
+    L1 distance (also named Manhattan distance)
+    :param feat1: feature 1. 1-D array.
+    :param feat2: feature 2. 1-D array.
+    :return: int.
+    """
+    return numpy.sum(numpy.fabs(feat1 - feat2))
 
 if __name__ == "__main__":
     # ExampleCannyEdgeDetection()
-    ExampleHELO()
+    # ExampleHELO()
+    ExampleDistHELO()
