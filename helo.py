@@ -9,11 +9,14 @@ import scipy.ndimage
 import numpy
 import canny
 
-def HELO(img_file, is_sketch):
+def HELO(img_file, is_sketch, W=25, K=72, th_edge_ratio=0.5):
     """
     Extract HELO feature.
     :param img_file:
     :param is_sketch:
+    :param W:
+    :param K:
+    :param th_edge_ratio:
     :return:
     """
     # Get ndarray of img_file.
@@ -26,16 +29,18 @@ def HELO(img_file, is_sketch):
         # Canny edge detection.
         edge, _, _ = canny.Canny(img_file)
     # Divide the image into W * W blocks.
-    image_blocks = _DivideImage(edge)
+    image_blocks = _DivideImage(edge, W)
     # Sobel gradient.
     Gx, Gy = _BlockSobelGradient(image_blocks)
     # Calculate the denoised local orientation
     alpha_blocks = _BlockDenoisedOrientation(Gx, Gy)
     # K-bin histogram
-    histogram_blocks = _Histogram(alpha_blocks)
+    histogram_blocks = _Histogram(alpha_blocks, K)
     # Filter blocks by removing the block with a few edge points.
-    filtered_histogram_blocks = _FilterBlocks(histogram_blocks, image_blocks)
-    return edge, ori_image_ndarray, alpha_blocks, histogram_blocks, filtered_histogram_blocks
+    filtered_histogram_blocks = _FilterBlocks(histogram_blocks, image_blocks, th_edge_ratio)
+    # Extract histogram feature
+    feature_helo, feature_filtered_helo = _ExtractHistFeature(K, alpha_blocks, image_blocks, th_edge_ratio)
+    return edge, ori_image_ndarray, alpha_blocks, histogram_blocks, filtered_histogram_blocks, feature_helo, feature_filtered_helo
 
 def DrawHELO(histogram_blocks):
     """
@@ -51,19 +56,19 @@ def DrawHELO(histogram_blocks):
             radian = histogram_blocks[i, j]
             base_x, base_y = j + 0.5, h_block_num - i - 0.5
             if radian <= numpy.pi * 0.25 or radian >= numpy.pi * 0.75:
-                dx1, dx2 = -1, 1
+                dx1, dx2 = 1, -1
                 dy1, dy2 = -numpy.tan(radian), numpy.tan(radian)
             elif radian == numpy.pi * 0.5:
                 dx1, dx2 = 0, 0
                 dy1, dy2 = -1, 1
             else:
+                dx1, dx2 = 1.0 / numpy.tan(radian), -1.0 / numpy.tan(radian)
                 dy1, dy2 = -1, 1
-                dx1, dx2 = -1.0 / numpy.tan(radian), 1.0 / numpy.tan(radian)
             x_pair = [base_x + 0.5 * dx1, base_x + 0.5 * dx2]
             y_pair = [base_y + 0.5 * dy1, base_y + 0.5 * dy2]
             pylab.plot(x_pair, y_pair, color='blue')
 
-def _DivideImage(data, W=25):
+def _DivideImage(data, W):
     """
     Divide the image into W * W.
     :param data: ndarray.
@@ -119,7 +124,7 @@ def _BlockDenoisedOrientation(Gx, Gy):
     alpha = 0.5 * (numpy.arctan2(Ly, Lx) + numpy.pi)
     return alpha
 
-def _Histogram(alpha_blocks, K=72):
+def _Histogram(alpha_blocks, K):
     """
     Histogram of local orientation
     :param alpha_blocks: ndarray. shape: (W, W).
@@ -130,7 +135,7 @@ def _Histogram(alpha_blocks, K=72):
     hist_blocks = hist_blocks.astype(numpy.int32) * numpy.pi / K
     return hist_blocks
 
-def _FilterBlocks(histogram, image_blocks, threshold_edge_ratio=0.5):
+def _FilterBlocks(histogram, image_blocks, threshold_edge_ratio):
     """
     Filter blocks by removing the block with a few edge points.
     :param histogram:
@@ -139,7 +144,7 @@ def _FilterBlocks(histogram, image_blocks, threshold_edge_ratio=0.5):
     :return:
     """
     h_block_num, w_block_num, h_block_size, w_block_size = image_blocks.shape
-    threshold_edge = threshold_edge_ratio * numpy.max((h_block_num * h_block_size, w_block_num * w_block_size))
+    threshold_edge = threshold_edge_ratio * numpy.max((h_block_size, w_block_size))
     filtered_histogram = numpy.zeros(histogram.shape)
     for i in xrange(h_block_num):
         for j in xrange(w_block_num):
@@ -148,4 +153,28 @@ def _FilterBlocks(histogram, image_blocks, threshold_edge_ratio=0.5):
                 filtered_histogram[i, j] = numpy.pi / 2.0
             else:
                 filtered_histogram[i, j] = histogram[i, j]
-    return histogram
+    return filtered_histogram
+
+def _ExtractHistFeature(K, alpha_blocks, image_blocks, th_edge_ratio):
+    """
+    Extract histogram feature.
+    :param alpha_blocks: ndarray. shape: (W, W).
+    :param image_blocks: ndarray. shape: (W, W, None, None).
+    :param th_edge_ratio: threshould ratio of edge.
+    :return: histogram feature, filtered_hist.
+    """
+    h_block_num, w_block_num = alpha_blocks.shape
+    _, _, h_block_size, w_block_size = image_blocks.shape
+    threshold_edge = th_edge_ratio * numpy.max((h_block_size, w_block_size))
+    feature_hist, feature_filtered_hist = numpy.zeros(K), numpy.zeros(K)
+    for i in xrange(h_block_num):
+        for j in xrange(w_block_num):
+            alpha = alpha_blocks[i, j]
+            alpha_bin_idx = int(alpha / (numpy.pi / K))
+            # Without filter
+            feature_hist[alpha_bin_idx] += 1
+            # With filter
+            image_block = image_blocks[i, j]
+            if len(image_block[image_block != 0]) >= threshold_edge:
+                feature_filtered_hist[alpha_bin_idx] += 1
+    return feature_hist, feature_filtered_hist

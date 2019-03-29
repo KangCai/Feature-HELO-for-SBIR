@@ -36,20 +36,21 @@ def ExampleHELO():
     """
     # Extract
     img_file = '.\\images\\airplane.png'
-    edge, image_ndarray, alpha, histogram, filtered_histogram = helo.HELO(img_file, is_sketch=False)
-    #print alpha
+    edge, image_ndarray, alpha, histogram, filtered_histogram, feature_helo, feature_filtered_helo = \
+            helo.HELO(img_file, is_sketch=False)
+    print feature_helo
+    print feature_filtered_helo
     # Draw
     pylab.title('input image')
     pylab.draw()
     if len(image_ndarray.shape) == 2:
         pylab.gray()
-    # pylab.imshow(image_ndarray)
-    # pylab.figure()
+    pylab.imshow(image_ndarray)
+    pylab.figure()
     pylab.imshow(edge)
     pylab.figure()
     pylab.imshow(alpha)
-    # pylab.figure()
-    # pylab.imshow(histogram)
+    helo.DrawHELO(alpha)
     helo.DrawHELO(histogram)
     helo.DrawHELO(filtered_histogram)
     pylab.show()
