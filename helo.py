@@ -10,6 +10,12 @@ import numpy
 import canny
 
 def HELO(img_file, is_sketch):
+    """
+    Extract HELO feature.
+    :param img_file:
+    :param is_sketch:
+    :return:
+    """
     # Get ndarray of img_file.
     ori_image_ndarray = scipy.ndimage.imread(img_file, flatten=True)
     # Preprocess.
@@ -27,7 +33,35 @@ def HELO(img_file, is_sketch):
     alpha_blocks = _BlockDenoisedOrientation(Gx, Gy)
     # K-bin histogram
     histogram_blocks = _Histogram(alpha_blocks)
-    return edge, ori_image_ndarray, alpha_blocks, histogram_blocks
+    # Filter blocks by removing the block with a few edge points.
+    filtered_histogram_blocks = _FilterBlocks(histogram_blocks, image_blocks)
+    return edge, ori_image_ndarray, alpha_blocks, histogram_blocks, filtered_histogram_blocks
+
+def DrawHELO(histogram_blocks):
+    """
+    Draw the orientation field of Fig.1 in the paper.
+    :param histogram_blocks:
+    :return:
+    """
+    import pylab
+    pylab.figure()
+    h_block_num, w_block_num = histogram_blocks.shape
+    for i in xrange(h_block_num):
+        for j in xrange(w_block_num):
+            radian = histogram_blocks[i, j]
+            base_x, base_y = j + 0.5, h_block_num - i - 0.5
+            if radian <= numpy.pi * 0.25 or radian >= numpy.pi * 0.75:
+                dx1, dx2 = -1, 1
+                dy1, dy2 = -numpy.tan(radian), numpy.tan(radian)
+            elif radian == numpy.pi * 0.5:
+                dx1, dx2 = 0, 0
+                dy1, dy2 = -1, 1
+            else:
+                dy1, dy2 = -1, 1
+                dx1, dx2 = -1.0 / numpy.tan(radian), 1.0 / numpy.tan(radian)
+            x_pair = [base_x + 0.5 * dx1, base_x + 0.5 * dx2]
+            y_pair = [base_y + 0.5 * dy1, base_y + 0.5 * dy2]
+            pylab.plot(x_pair, y_pair, color='blue')
 
 def _DivideImage(data, W=25):
     """
@@ -38,7 +72,10 @@ def _DivideImage(data, W=25):
     """
     h, w = data.shape
     h_block_size, w_block_size = h / W, w / W
-    image_blocks = numpy.reshape(data[:h_block_size * W, :w_block_size * W], (W, W, h_block_size, w_block_size))
+    image_blocks = numpy.zeros((W, W, h_block_size, w_block_size))
+    for i in xrange(W):
+        for j in xrange(W):
+            image_blocks[i, j, :, :] = data[h_block_size*i:h_block_size*(i+1), w_block_size*j:w_block_size*(j+1)]
     return image_blocks
 
 def _BlockSobelGradient(data_blocks):
@@ -71,13 +108,13 @@ def _BlockDenoisedOrientation(Gx, Gy):
     Lx, Ly = numpy.zeros((h_block_num, w_block_num)), numpy.zeros((h_block_num, w_block_num))
     for i in xrange(h_block_num):
         for j in xrange(w_block_num):
-            Ly[i, j] = numpy.sum(Gx[i, j] * Gy[i, j])
+            Ly[i, j] = 2 * numpy.sum(Gx[i, j] * Gy[i, j])
             Lx[i, j] = numpy.sum(Gx[i, j]**2 - Gy[i, j]**2)
     # Gaussian filter
     sigma, window_size = 0.5, 3
     truncate = (((window_size - 1) / 2) - 0.5) / sigma
     Lx = scipy.ndimage.filters.gaussian_filter(Lx, sigma=sigma, truncate=truncate)
-    Ly = scipy.ndimage.filters.gaussian_filter(Lx, sigma=sigma, truncate=truncate)
+    Ly = scipy.ndimage.filters.gaussian_filter(Ly, sigma=sigma, truncate=truncate)
     # Calculate the local orientation for block
     alpha = 0.5 * (numpy.arctan2(Ly, Lx) + numpy.pi)
     return alpha
@@ -92,3 +129,23 @@ def _Histogram(alpha_blocks, K=72):
     hist_blocks = alpha_blocks / (numpy.pi / K)
     hist_blocks = hist_blocks.astype(numpy.int32) * numpy.pi / K
     return hist_blocks
+
+def _FilterBlocks(histogram, image_blocks, threshold_edge_ratio=0.5):
+    """
+    Filter blocks by removing the block with a few edge points.
+    :param histogram:
+    :param image_blocks:
+    :param threshold_edge_ratio:
+    :return:
+    """
+    h_block_num, w_block_num, h_block_size, w_block_size = image_blocks.shape
+    threshold_edge = threshold_edge_ratio * numpy.max((h_block_num * h_block_size, w_block_num * w_block_size))
+    filtered_histogram = numpy.zeros(histogram.shape)
+    for i in xrange(h_block_num):
+        for j in xrange(w_block_num):
+            image_block = image_blocks[i, j]
+            if len(image_block[image_block!= 0]) < threshold_edge:
+                filtered_histogram[i, j] = numpy.pi / 2.0
+            else:
+                filtered_histogram[i, j] = histogram[i, j]
+    return histogram
