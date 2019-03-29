@@ -2,8 +2,6 @@
 
 [中文](https://github.com/KangCai/An-Improved-Histogram-of-Edge-Local-Orientations-for-Sketch-Based-Image-Retrieval/blob/master/README_zh_CN.md)
 
-============================================================
-
 Kang is glad you find me. This is an project for realization of paper "An Improved Histogram of Edge Local 
 Orientations for Sketch-Based Image Retrieval". Any suggestions or comments well be welcome.
 
