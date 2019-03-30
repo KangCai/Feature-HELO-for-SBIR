@@ -45,14 +45,16 @@ def ExampleDistHELO():
     Example of testing performance of HELO.
     :return:
     """
-    helo_true = helo.HELO('.\\images\\airplane.png', is_sketch=False)
-    print helo_true[-1]
-    helo_false = helo.HELO('.\\images\\valve.png', is_sketch=False)
-    print helo_false[-1]
-    helo_query_sketch = helo.HELO('.\\images\\airplane_sketch.png', is_sketch=True)
-    print helo_query_sketch[-1]
-    print CalL1Distance(helo_query_sketch[-1],helo_true[-1])
-    print CalL1Distance(helo_query_sketch[-1], helo_false[-1])
+    for rotate_type in  ('RAW', 'PCA', 'PC', 'R'):
+        helo_true = helo.HELO('.\\images\\airplane.png', is_sketch=False, rotate_type=rotate_type)
+        print helo_true[-1]
+        helo_false = helo.HELO('.\\images\\valve.png', is_sketch=False, rotate_type=rotate_type)
+        print helo_false[-1]
+        helo_query_sketch = helo.HELO('.\\images\\airplane_sketch.png', is_sketch=True, rotate_type=rotate_type)
+        print helo_query_sketch[-1]
+        print CalL1Distance(helo_query_sketch[-1],helo_true[-1])
+        print CalL1Distance(helo_query_sketch[-1], helo_false[-1])
+        print '=' * 10
 
 def CalL1Distance(feat1, feat2):
     """
@@ -65,5 +67,5 @@ def CalL1Distance(feat1, feat2):
 
 if __name__ == "__main__":
     # ExampleCannyEdgeDetection()
-    ExampleHELO()
+    ExampleDistHELO()
     # ExampleDistHELO()

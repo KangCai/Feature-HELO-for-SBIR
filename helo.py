@@ -47,7 +47,7 @@ def HELO(img_file, is_sketch, rotate_type='RAW', W=25, K=72, th_edge_ratio=0.5, 
         DrawHELO(alpha_blocks, histogram_blocks, filtered_histogram_blocks)
         pylab.show()
     # Rotation invariance
-    processed_alpha_blocks = RotationInvarianceHELO(rotate_type, alpha_blocks, edge)
+    processed_alpha_blocks = RotationInvarianceHELO(alpha_blocks, rotate_type, edge)
     # Extract histogram feature
     feature_helo, feature_filtered_helo = _ExtractHistFeature(K, processed_alpha_blocks, image_blocks, th_edge_ratio)
     return edge, ori_image_ndarray, feature_filtered_helo
@@ -63,12 +63,12 @@ def RotationInvarianceHELO(alpha_blocks, rotate_type, edge=None):
     if edge is None and rotate_type in ('PCA', 'R'):
         return alpha_blocks
     if rotate_type == 'PC':
-        processed_alpha = _RotationInvariancePC(alpha_blocks, rotate_type)
+        processed_alpha = _RotationInvariancePC(alpha_blocks)
     elif rotate_type == 'PCA':
-        processed_alpha = _RotationInvariancePCA(alpha_blocks, rotate_type, edge)
+        processed_alpha = _RotationInvariancePCA(alpha_blocks, edge)
     elif rotate_type == 'R':
-        alpha_pc = _RotationInvariancePC(alpha_blocks, rotate_type)
-        alpha_pca = _RotationInvariancePCA(alpha_blocks, rotate_type, edge)
+        alpha_pc = _RotationInvariancePC(alpha_blocks)
+        alpha_pca = _RotationInvariancePCA(alpha_blocks, edge)
         processed_alpha = alpha_pca * 0.3 + alpha_pc * 0.7
     else:
         processed_alpha = alpha_blocks
@@ -233,9 +233,10 @@ def _RotationInvariancePC(alpha_blocks):
     """
     h_block_num, w_block_num = alpha_blocks.shape
     ri_alpha_block = numpy.zeros(alpha_blocks.shape)
+    h_center_idx, w_center_idx = (h_block_num - 1) / 2.0, (h_block_num - 1) / 2.0
     for i in xrange(h_block_num):
         for j in xrange(w_block_num):
-            ri_alpha = alpha_blocks[i, j] - numpy.arctan2(j, i)
+            ri_alpha = alpha_blocks[i, j] - numpy.arctan2(i - h_center_idx, j - w_center_idx)
             ri_alpha = ri_alpha % numpy.pi
             ri_alpha_block[i, j] = ri_alpha
     return ri_alpha_block
@@ -264,8 +265,9 @@ def _RotationInvariancePCA(alpha_blocks, edge):
     eig_val_ind = eig_val_ind[:-(top_n_feat + 1):-1]
     # Top eigenvector.
     red_eig_vec = eig_vec[:, eig_val_ind]
-    alpha_base = numpy.arctan2(red_eig_vec[1], red_eig_vec[0])
     # Get image rotation.
+    alpha_base = numpy.arctan2(red_eig_vec[1], red_eig_vec[0]) + numpy.pi / 2.0
+    # Rotate image by alpha_base.
     h_block_num, w_block_num = alpha_blocks.shape
     ri_alpha_block = numpy.zeros(alpha_blocks.shape)
     for i in xrange(h_block_num):
@@ -273,3 +275,4 @@ def _RotationInvariancePCA(alpha_blocks, edge):
             ri_alpha = alpha_blocks[i, j] - alpha_base
             ri_alpha = ri_alpha % numpy.pi
             ri_alpha_block[i, j] = ri_alpha
+    return ri_alpha_block
