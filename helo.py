@@ -10,12 +10,12 @@ import numpy
 import canny
 import pylab
 
-def HELO(img_file, is_sketch, helo_type='RAW', W=25, K=72, th_edge_ratio=0.5, draw=False):
+def HELO(img_file, is_sketch, rotate_type='RAW', W=25, K=72, th_edge_ratio=0.5, draw=False):
     """
     Extract HELO feature.
     :param img_file:
     :param is_sketch:
-    :param helo_type:
+    :param rotate_type: str. ('PC', 'PCA', 'R', 'RAW')
     :param W:
     :param K:
     :param th_edge_ratio:
@@ -31,33 +31,6 @@ def HELO(img_file, is_sketch, helo_type='RAW', W=25, K=72, th_edge_ratio=0.5, dr
     else:
         # Canny edge detection.
         edge, _, _ = canny.Canny(img_file)
-    if helo_type == 'PCA':
-        edge_pca = _EdgeProcessPCA(edge)
-        feature_filtered_helo = HELOExtractionFromEdge(ori_image_ndarray, edge_pca, W, K, th_edge_ratio, draw)
-    elif helo_type == 'PC':
-        edge_pc = _EdgeProcessPC(edge)
-        feature_filtered_helo = HELOExtractionFromEdge(ori_image_ndarray, edge_pc, W, K, th_edge_ratio, draw)
-    elif helo_type =='R':
-        edge_pca = _EdgeProcessPCA(edge)
-        edge_pc = _EdgeProcessPC(edge)
-        helo_pca = HELOExtractionFromEdge(ori_image_ndarray, edge_pca, W, K, th_edge_ratio, draw)
-        helo_pc = HELOExtractionFromEdge(ori_image_ndarray, edge_pc, W, K, th_edge_ratio, draw)
-        feature_filtered_helo = helo_pca * 0.3 + helo_pc * 0.7
-    else:
-        feature_filtered_helo = HELOExtractionFromEdge(ori_image_ndarray, edge, W, K, th_edge_ratio, draw)
-    return edge, ori_image_ndarray, feature_filtered_helo
-
-def HELOExtractionFromEdge(ori_image_ndarray, edge, W, K, th_edge_ratio, draw):
-    """
-    Extract HELO from edge.
-    :param ori_image_ndarray: useless, just for draw.
-    :param edge:
-    :param W:
-    :param K:
-    :param th_edge_ratio:
-    :param draw:
-    :return:
-    """
     # Divide the image into W * W blocks.
     image_blocks = _DivideImage(edge, W)
     # Sobel gradient.
@@ -73,13 +46,37 @@ def HELOExtractionFromEdge(ori_image_ndarray, edge, W, K, th_edge_ratio, draw):
         DrawNdarray(ori_image_ndarray, edge, alpha_blocks)
         DrawHELO(alpha_blocks, histogram_blocks, filtered_histogram_blocks)
         pylab.show()
+    # Rotation invariance
+    processed_alpha_blocks = RotationInvarianceHELO(rotate_type, alpha_blocks, edge)
     # Extract histogram feature
-    feature_helo, feature_filtered_helo = _ExtractHistFeature(K, alpha_blocks, image_blocks, th_edge_ratio)
-    return feature_filtered_helo
+    feature_helo, feature_filtered_helo = _ExtractHistFeature(K, processed_alpha_blocks, image_blocks, th_edge_ratio)
+    return edge, ori_image_ndarray, feature_filtered_helo
+
+def RotationInvarianceHELO(alpha_blocks, rotate_type, edge=None):
+    """
+    Extraction HELO with roation invariance.
+    :param alpha_blocks:
+    :param rotate_type: str. ('PC', 'PCA', 'R', 'RAW')
+    :param edge:
+    :return:
+    """
+    if edge is None and rotate_type in ('PCA', 'R'):
+        return alpha_blocks
+    if rotate_type == 'PC':
+        processed_alpha = _RotationInvariancePC(alpha_blocks, rotate_type)
+    elif rotate_type == 'PCA':
+        processed_alpha = _RotationInvariancePCA(alpha_blocks, rotate_type, edge)
+    elif rotate_type == 'R':
+        alpha_pc = _RotationInvariancePC(alpha_blocks, rotate_type)
+        alpha_pca = _RotationInvariancePCA(alpha_blocks, rotate_type, edge)
+        processed_alpha = alpha_pca * 0.3 + alpha_pc * 0.7
+    else:
+        processed_alpha = alpha_blocks
+    return processed_alpha
 
 def DrawNdarray(*args):
     """
-
+    Draw the edge image.
     :return:
     """
     if not args:
@@ -92,7 +89,6 @@ def DrawNdarray(*args):
 def DrawHELO(*args):
     """
     Draw the orientation field of Fig.1 in the paper.
-    :param histogram_blocks:
     :return:
     """
     if not args:
@@ -205,21 +201,21 @@ def _FilterBlocks(histogram, image_blocks, threshold_edge_ratio):
                 filtered_histogram[i, j] = histogram[i, j]
     return filtered_histogram
 
-def _ExtractHistFeature(K, alpha_blocks, image_blocks, th_edge_ratio):
+def _ExtractHistFeature(K, processed_alpha_blocks, image_blocks, th_edge_ratio):
     """
     Extract histogram feature.
-    :param alpha_blocks: ndarray. shape: (W, W).
+    :param processed_alpha_blocks: ndarray. shape: (W, W).
     :param image_blocks: ndarray. shape: (W, W, None, None).
     :param th_edge_ratio: threshould ratio of edge.
     :return: histogram feature, filtered_hist.
     """
-    h_block_num, w_block_num = alpha_blocks.shape
+    h_block_num, w_block_num = processed_alpha_blocks.shape
     _, _, h_block_size, w_block_size = image_blocks.shape
     threshold_edge = th_edge_ratio * numpy.max((h_block_size, w_block_size))
     feature_hist, feature_filtered_hist = numpy.zeros(K), numpy.zeros(K)
     for i in xrange(h_block_num):
         for j in xrange(w_block_num):
-            alpha = alpha_blocks[i, j]
+            alpha = processed_alpha_blocks[i, j]
             alpha_bin_idx = min(int(alpha / (numpy.pi / K)), K-1)
             # Without filter
             feature_hist[alpha_bin_idx] += 1
@@ -229,25 +225,51 @@ def _ExtractHistFeature(K, alpha_blocks, image_blocks, th_edge_ratio):
                 feature_filtered_hist[alpha_bin_idx] += 1
     return feature_hist, feature_filtered_hist
 
-def _EdgeProcessPCA(edge):
+def _RotationInvariancePC(alpha_blocks):
     """
-    Edge post-process of rotation invariance by PCA.
-    :param edge:
+    Rotation invariance with polar coordinates (PC) method.
+    :param alpha_blocks: ndarray. shape: (W, W).
     :return:
     """
-    h, w = edge.shape
-    edge_pca = numpy.zeros(edge.shape)
-    return edge_pca
+    h_block_num, w_block_num = alpha_blocks.shape
+    ri_alpha_block = numpy.zeros(alpha_blocks.shape)
+    for i in xrange(h_block_num):
+        for j in xrange(w_block_num):
+            ri_alpha = alpha_blocks[i, j] - numpy.arctan2(j, i)
+            ri_alpha = ri_alpha % numpy.pi
+            ri_alpha_block[i, j] = ri_alpha
+    return ri_alpha_block
 
-def _EdgeProcessPC(edge):
+def _RotationInvariancePCA(alpha_blocks, edge):
     """
-    Edge post-process of rotation invariance by
+    Rotation invariance with principal component analysis(PCA) method.
+    :param alpha_blocks: ndarray. shape: (W, W).
     :param edge:
     :return:
     """
-    h, w = edge.shape
-    edge_pc = numpy.zeros(edge.shape)
-    for i in xrange(h):
-        for j in xrange(w):
-            edge_pc[i, j] = edge[i, j]
-    return edge_pc
+    # Get 2-d eigenvector of edge map by PCA.
+    top_n_feat = 1
+    x_edge = numpy.argwhere(edge > 0)
+    # Mean.
+    mean_val = numpy.mean(x_edge, axis=0)
+    # Mean standard.
+    mean_removed = x_edge - mean_val
+    # Cov mat.
+    cov_mat = numpy.cov(mean_removed, rowvar=False)
+    # Eigenvector.
+    eig_val, eig_vec = numpy.linalg.eig(numpy.mat(cov_mat))
+    # Sort.
+    eig_val_ind = numpy.argsort(eig_val)
+    # Top eigenvector index.
+    eig_val_ind = eig_val_ind[:-(top_n_feat + 1):-1]
+    # Top eigenvector.
+    red_eig_vec = eig_vec[:, eig_val_ind]
+    alpha_base = numpy.arctan2(red_eig_vec[1], red_eig_vec[0])
+    # Get image rotation.
+    h_block_num, w_block_num = alpha_blocks.shape
+    ri_alpha_block = numpy.zeros(alpha_blocks.shape)
+    for i in xrange(h_block_num):
+        for j in xrange(w_block_num):
+            ri_alpha = alpha_blocks[i, j] - alpha_base
+            ri_alpha = ri_alpha % numpy.pi
+            ri_alpha_block[i, j] = ri_alpha
