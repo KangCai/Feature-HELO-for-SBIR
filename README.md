@@ -1,4 +1,4 @@
-# Feature-HELO-for-SBIR
+# Feature HELO for SBIR
 
 [中文](https://github.com/KangCai/An-Improved-Histogram-of-Edge-Local-Orientations-for-Sketch-Based-Image-Retrieval/blob/master/README_zh_CN.md)
 
