@@ -8,15 +8,18 @@ Date: March 2019.
 import scipy.ndimage
 import numpy
 import canny
+import pylab
 
-def HELO(img_file, is_sketch, W=25, K=72, th_edge_ratio=0.5):
+def HELO(img_file, is_sketch, helo_type='RAW', W=25, K=72, th_edge_ratio=0.5, draw=False):
     """
     Extract HELO feature.
     :param img_file:
     :param is_sketch:
+    :param helo_type:
     :param W:
     :param K:
     :param th_edge_ratio:
+    :param draw:
     :return:
     """
     # Get ndarray of img_file.
@@ -28,45 +31,92 @@ def HELO(img_file, is_sketch, W=25, K=72, th_edge_ratio=0.5):
     else:
         # Canny edge detection.
         edge, _, _ = canny.Canny(img_file)
+    if helo_type == 'PCA':
+        edge_pca = _EdgeProcessPCA(edge)
+        feature_filtered_helo = HELOExtractionFromEdge(ori_image_ndarray, edge_pca, W, K, th_edge_ratio, draw)
+    elif helo_type == 'PC':
+        edge_pc = _EdgeProcessPC(edge)
+        feature_filtered_helo = HELOExtractionFromEdge(ori_image_ndarray, edge_pc, W, K, th_edge_ratio, draw)
+    elif helo_type =='R':
+        edge_pca = _EdgeProcessPCA(edge)
+        edge_pc = _EdgeProcessPC(edge)
+        helo_pca = HELOExtractionFromEdge(ori_image_ndarray, edge_pca, W, K, th_edge_ratio, draw)
+        helo_pc = HELOExtractionFromEdge(ori_image_ndarray, edge_pc, W, K, th_edge_ratio, draw)
+        feature_filtered_helo = helo_pca * 0.3 + helo_pc * 0.7
+    else:
+        feature_filtered_helo = HELOExtractionFromEdge(ori_image_ndarray, edge, W, K, th_edge_ratio, draw)
+    return edge, ori_image_ndarray, feature_filtered_helo
+
+def HELOExtractionFromEdge(ori_image_ndarray, edge, W, K, th_edge_ratio, draw):
+    """
+    Extract HELO from edge.
+    :param ori_image_ndarray: useless, just for draw.
+    :param edge:
+    :param W:
+    :param K:
+    :param th_edge_ratio:
+    :param draw:
+    :return:
+    """
     # Divide the image into W * W blocks.
     image_blocks = _DivideImage(edge, W)
     # Sobel gradient.
     Gx, Gy = _BlockSobelGradient(image_blocks)
     # Calculate the denoised local orientation
     alpha_blocks = _BlockDenoisedOrientation(Gx, Gy)
-    # K-bin histogram
-    histogram_blocks = _Histogram(alpha_blocks, K)
-    # Filter blocks by removing the block with a few edge points.
-    filtered_histogram_blocks = _FilterBlocks(histogram_blocks, image_blocks, th_edge_ratio)
+    if draw:
+        # K-bin histogram
+        histogram_blocks = _Histogram(alpha_blocks, K)
+        # Filter blocks by removing the block with a few edge points.
+        filtered_histogram_blocks = _FilterBlocks(histogram_blocks, image_blocks, th_edge_ratio)
+        # Draw
+        DrawNdarray(ori_image_ndarray, edge, alpha_blocks)
+        DrawHELO(alpha_blocks, histogram_blocks, filtered_histogram_blocks)
+        pylab.show()
     # Extract histogram feature
     feature_helo, feature_filtered_helo = _ExtractHistFeature(K, alpha_blocks, image_blocks, th_edge_ratio)
-    return edge, ori_image_ndarray, alpha_blocks, histogram_blocks, filtered_histogram_blocks, feature_helo, feature_filtered_helo
+    return feature_filtered_helo
 
-def DrawHELO(histogram_blocks):
+def DrawNdarray(*args):
+    """
+
+    :return:
+    """
+    if not args:
+        return
+    pylab.gray()
+    for arg in args:
+        pylab.figure()
+        pylab.imshow(arg)
+
+def DrawHELO(*args):
     """
     Draw the orientation field of Fig.1 in the paper.
     :param histogram_blocks:
     :return:
     """
-    import pylab
-    pylab.figure()
-    h_block_num, w_block_num = histogram_blocks.shape
-    for i in xrange(h_block_num):
-        for j in xrange(w_block_num):
-            radian = histogram_blocks[i, j]
-            base_x, base_y = j + 0.5, h_block_num - i - 0.5
-            if radian <= numpy.pi * 0.25 or radian >= numpy.pi * 0.75:
-                dx1, dx2 = 1, -1
-                dy1, dy2 = -numpy.tan(radian), numpy.tan(radian)
-            elif radian == numpy.pi * 0.5:
-                dx1, dx2 = 0, 0
-                dy1, dy2 = -1, 1
-            else:
-                dx1, dx2 = 1.0 / numpy.tan(radian), -1.0 / numpy.tan(radian)
-                dy1, dy2 = -1, 1
-            x_pair = [base_x + 0.5 * dx1, base_x + 0.5 * dx2]
-            y_pair = [base_y + 0.5 * dy1, base_y + 0.5 * dy2]
-            pylab.plot(x_pair, y_pair, color='blue')
+    if not args:
+        return
+    pylab.gray()
+    for arg in args:
+        pylab.figure()
+        h_block_num, w_block_num = arg.shape
+        for i in xrange(h_block_num):
+            for j in xrange(w_block_num):
+                radian = arg[i, j]
+                base_x, base_y = j + 0.5, h_block_num - i - 0.5
+                if radian <= numpy.pi * 0.25 or radian >= numpy.pi * 0.75:
+                    dx1, dx2 = 1, -1
+                    dy1, dy2 = -numpy.tan(radian), numpy.tan(radian)
+                elif radian == numpy.pi * 0.5:
+                    dx1, dx2 = 0, 0
+                    dy1, dy2 = -1, 1
+                else:
+                    dx1, dx2 = 1.0 / numpy.tan(radian), -1.0 / numpy.tan(radian)
+                    dy1, dy2 = -1, 1
+                x_pair = [base_x + 0.5 * dx1, base_x + 0.5 * dx2]
+                y_pair = [base_y + 0.5 * dy1, base_y + 0.5 * dy2]
+                pylab.plot(x_pair, y_pair, color='blue')
 
 def _DivideImage(data, W):
     """
@@ -178,3 +228,26 @@ def _ExtractHistFeature(K, alpha_blocks, image_blocks, th_edge_ratio):
             if len(image_block[image_block != 0]) >= threshold_edge:
                 feature_filtered_hist[alpha_bin_idx] += 1
     return feature_hist, feature_filtered_hist
+
+def _EdgeProcessPCA(edge):
+    """
+    Edge post-process of rotation invariance by PCA.
+    :param edge:
+    :return:
+    """
+    h, w = edge.shape
+    edge_pca = numpy.zeros(edge.shape)
+    return edge_pca
+
+def _EdgeProcessPC(edge):
+    """
+    Edge post-process of rotation invariance by
+    :param edge:
+    :return:
+    """
+    h, w = edge.shape
+    edge_pc = numpy.zeros(edge.shape)
+    for i in xrange(h):
+        for j in xrange(w):
+            edge_pc[i, j] = edge[i, j]
+    return edge_pc
