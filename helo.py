@@ -52,6 +52,14 @@ def HELO(img_file, is_sketch, rotate_type='RAW', W=25, K=72, th_edge_ratio=0.5, 
     feature_helo, feature_filtered_helo = _ExtractHistFeature(K, processed_alpha_blocks, image_blocks, th_edge_ratio)
     return edge, ori_image_ndarray, feature_filtered_helo
 
+def FlipInvariance(feature):
+    """
+    Flip invariance.
+    :param feature:
+    :return:
+    """
+    return numpy.flip(feature, axis=0)
+
 def RotationInvarianceHELO(alpha_blocks, rotate_type, edge=None):
     """
     Extraction HELO with roation invariance.

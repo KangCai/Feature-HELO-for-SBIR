@@ -33,3 +33,5 @@ Orientations for Sketch-Based Image Retrieval". Any suggestions or comments well
 * 梯度减去极坐标角度
 * 梯度减去PCA第1梯度特征向量
 
+**Flip invariance**
+
