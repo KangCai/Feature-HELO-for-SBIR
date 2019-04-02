@@ -10,12 +10,13 @@ import numpy
 import canny
 import pylab
 
-def HELO(img_file, is_sketch, rotate_type='RAW', W=25, K=72, th_edge_ratio=0.5, draw=False):
+def HELO(img_file, is_sketch, rotate_type='RAW', calc_flip=False, W=25, K=72, th_edge_ratio=0.5, draw=False):
     """
     Extract HELO feature.
     :param img_file:
     :param is_sketch:
     :param rotate_type: str. ('PC', 'PCA', 'R', 'RAW')
+    :param calc_flip: boolean.
     :param W:
     :param K:
     :param th_edge_ratio:
@@ -50,7 +51,26 @@ def HELO(img_file, is_sketch, rotate_type='RAW', W=25, K=72, th_edge_ratio=0.5, 
     processed_alpha_blocks = RotationInvarianceHELO(alpha_blocks, rotate_type, edge)
     # Extract histogram feature
     feature_helo, feature_filtered_helo = _ExtractHistFeature(K, processed_alpha_blocks, image_blocks, th_edge_ratio)
-    return edge, ori_image_ndarray, feature_filtered_helo
+    if calc_flip:
+        flip_alpha_blocks = _FlipAlphaBlocks(alpha_blocks)
+        flip_processed_alpha_blocks = RotationInvarianceHELO(flip_alpha_blocks, rotate_type, edge)
+        flip_feature_helo, flip_feature_filtered_helo = _ExtractHistFeature(K, flip_processed_alpha_blocks,
+                image_blocks, th_edge_ratio)
+        feature_filtered_helo = (feature_filtered_helo, flip_feature_filtered_helo, FlipInvariance(feature_filtered_helo))
+    return edge, ori_image_ndarray, alpha_blocks, feature_filtered_helo
+
+def _FlipAlphaBlocks(alpha_blocks):
+    """
+    Flip alpha blocks
+    :param alpha_blocks:
+    :return:
+    """
+    h_block_num, w_block_num = alpha_blocks.shape
+    flip_alpha_blocks = numpy.zeros(alpha_blocks.shape)
+    for i in xrange(h_block_num):
+        for j in xrange(w_block_num):
+            flip_alpha_blocks[i][j] = numpy.pi - alpha_blocks[i][w_block_num - 1 - j]
+    return flip_alpha_blocks
 
 def FlipInvariance(feature):
     """
