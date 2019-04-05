@@ -18,9 +18,33 @@ Orientations for Sketch-Based Image Retrieval". Any suggestions or comments well
 
 ### Note
 
+* Canny edge detection algorithm: "canny.py"
+* HELO feature extraction: "helo.py" (depends on "canny.py"")
+* Examples: "examples.py" (depends on "canny.py" and "helo.py"")
+
 ---
 
 ### How to use
+
+Canny edge detection:
+
+```buildoutcfg
+img_file = '.\\images\\airplane.png'
+edge, image_ndarray, nms = canny.Canny(img_file)
+```
+
+HELO feature extraction:
+
+```buildoutcfg
+img_file = '.\\images\\airplane.png'
+edge, image_ndarray, alpha_blocks, helo = helo.HELO(img_file, is_sketch=False, draw=False, calc_flip=True)
+# If calc_flip == True
+ori_helo, flip_helo = helo
+# If calc_flip == False
+# ori_helo = helo
+```
+
+For more details, please refer to file "examples.py".
 
 ---
 
@@ -29,6 +53,7 @@ Orientations for Sketch-Based Image Retrieval". Any suggestions or comments well
 **Main Procedure**
 
 * For test images in database, use the Canny algorithm to get an edge map. For sketch, use a simple thresholding to get a binary representation.
+* Bound the valid image with a rectangular by removing boundary pixel with no edge.
 * Divide the image into W × W blocks.
 * Compute gradient respect to x and to y for each pixel in a block by applying Sobel masks.
 * Compute local orientations of each block.
@@ -49,16 +74,20 @@ In my opinion, method 2 is more reasonable and robust than method 1. But it is n
 
 **Flip invariance**
 
-Supposing we have used the method of rotational invariance described above, the realization of flip invariance is very easy then. We just need reverse the HELO feature. For example, we get a 5-d HELO feature of a query sketch as follows,
+Supposing we will use the method of rotational invariance described above in the next step, the realization of flip invariance is very easy then. We just need reverse the alpha blocks. For example, we get a 5 * 5 alpha blocks of a query sketch as follows,
 
 ```buildoutcfg
-[1 2 3 4 5]
+[1 2 3,
+4 5 6,
+7 8 9]
 ```
 
-When we match it with the HELO features of database, we also need to reverse the feature into
+. we reverse the alpha blocks into
 
 ```buildoutcfg
-[5 4 3 2 1]
+[3 2 1,
+6 5 4,
+9 8 7]
 ```
 
-，then match them again. For each image-sketch pair for matching, we always choose the minimum value of two L1 distance as the final distance of matching pair.
+，then applying rotational invariance method and extract the HELO feature. In this way, we get two HELO feature for each query sketch. For each image-sketch pair for matching, we always choose the minimum value of two L1 distance as the final distance of matching pair.

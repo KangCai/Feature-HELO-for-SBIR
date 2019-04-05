@@ -18,9 +18,33 @@ Sketch-Based Image Retrieval"。有任何意见或建议欢迎提出。
 
 ### 注意
 
+* Canny 边缘检测算法: canny.py
+* HELO 特征提取: helo.py (依赖 canny.py)
+* 使用示例: examples.py (依赖 canny.py 和 helo.py)
+
 ---
 
 ### 使用方法
+
+Canny 边缘检测:
+
+```buildoutcfg
+img_file = '.\\images\\airplane.png'
+edge, image_ndarray, nms = canny.Canny(img_file)
+```
+
+HELO 特征提取:
+
+```buildoutcfg
+img_file = '.\\images\\airplane.png'
+edge, image_ndarray, alpha_blocks, helo = helo.HELO(img_file, is_sketch=False, draw=False, calc_flip=True)
+# If calc_flip == True
+ori_helo, flip_helo = helo
+# If calc_flip == False
+# ori_helo = helo
+```
+
+更多使用细节可参考 examples.py.
 
 ---
 
@@ -29,6 +53,7 @@ Sketch-Based Image Retrieval"。有任何意见或建议欢迎提出。
 **主干流程**
 
 * 对于库中的图像,通过 Canny 边缘检测提取边缘图像;对于待问询的简笔画,直接进行二值化处理作为边缘图像;
+* 用一个最小的矩形框住边缘图所有非0的像素;
 * 将边缘图像均匀划分为 W * W 个子图像块;
 * 通过 Sobel 算子计算每个子图像块沿 x 方向和 y 方向的梯度;
 * 根据子图像块中每个像素的梯度,计算子图像的局部方向;
@@ -47,17 +72,21 @@ Sketch-Based Image Retrieval"。有任何意见或建议欢迎提出。
 
 **翻转不变性**
 
-假设已经使用了前文描述的旋转不变性，这里的翻转就很简单了，直接将特征反转即可。例如对于某个简笔画问询图，它经过了旋转不变性处理得到了
- 5 维 HELO 特征，
+假设我们后续会使用了前文描述的旋转不变性，这里的翻转就很简单了，直接将 alpha 反转即可。例如对于某个简笔画问询图，它提取出了每个块的 alpha 值
+ 3 * 3 的 alpha blocks，
 
 ```buildoutcfg
-[1 2 3 4 5]
+[1 2 3,
+4 5 6,
+7 8 9]
 ```
 
-，在进行匹配时，将问询 HELO 特征翻转成
+，将其翻转成
 
 ```buildoutcfg
-[5 4 3 2 1]
+[3 2 1,
+6 5 4,
+9 8 7]
 ```
 
-，再与图像匹配库中进行匹配，对于任意一个图像，都选取两种特征 L1 距离中较小的值作为两者之间的距离。
+，再进行上文的旋转不变性变换,提取出 HELO 特征,这样一来,我们就为每个图像生成了两个 HELO 特征.将其与图像匹配库中的特征进行匹配，对于任意一个图像，都选取两种特征 L1 距离中较小的值作为两者之间的距离。
