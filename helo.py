@@ -28,10 +28,12 @@ def HELO(img_file, is_sketch, rotate_type='RAW', calc_flip=False, W=25, K=72, th
     # Preprocess.
     if is_sketch:
         # Simple thresholding.
-        edge = 255 * ((255 - ori_image_ndarray) > 0)
+        ori_edge = 255 * ((255 - ori_image_ndarray) > 0)
     else:
         # Canny edge detection.
-        edge, _, _ = canny.Canny(img_file)
+        ori_edge, _, _ = canny.Canny(img_file)
+    # Get 4 bounds(top, bottom, left, right) for image
+    edge = _GetValidZone(ori_edge)
     # Divide the image into W * W blocks.
     image_blocks = _DivideImage(edge, W)
     # Sobel gradient.
@@ -48,59 +50,17 @@ def HELO(img_file, is_sketch, rotate_type='RAW', calc_flip=False, W=25, K=72, th
         DrawHELO(alpha_blocks, histogram_blocks, filtered_histogram_blocks)
         pylab.show()
     # Rotation invariance
-    processed_alpha_blocks = RotationInvarianceHELO(alpha_blocks, rotate_type, edge)
+    processed_alpha_blocks = _RotationInvarianceHELO(alpha_blocks, rotate_type, edge)
     # Extract histogram feature
     feature_helo, feature_filtered_helo = _ExtractHistFeature(K, processed_alpha_blocks, image_blocks, th_edge_ratio)
     if calc_flip:
         flip_alpha_blocks = _FlipAlphaBlocks(alpha_blocks)
-        flip_processed_alpha_blocks = RotationInvarianceHELO(flip_alpha_blocks, rotate_type, edge)
+        flip_processed_alpha_blocks = _RotationInvarianceHELO(flip_alpha_blocks, rotate_type, edge)
         flip_feature_helo, flip_feature_filtered_helo = _ExtractHistFeature(K, flip_processed_alpha_blocks,
                 image_blocks, th_edge_ratio)
-        feature_filtered_helo = (feature_filtered_helo, flip_feature_filtered_helo, FlipInvariance(feature_filtered_helo))
+        feature_filtered_helo = (feature_filtered_helo, flip_feature_filtered_helo)
     return edge, ori_image_ndarray, alpha_blocks, feature_filtered_helo
 
-def _FlipAlphaBlocks(alpha_blocks):
-    """
-    Flip alpha blocks
-    :param alpha_blocks:
-    :return:
-    """
-    h_block_num, w_block_num = alpha_blocks.shape
-    flip_alpha_blocks = numpy.zeros(alpha_blocks.shape)
-    for i in xrange(h_block_num):
-        for j in xrange(w_block_num):
-            flip_alpha_blocks[i][j] = numpy.pi - alpha_blocks[i][w_block_num - 1 - j]
-    return flip_alpha_blocks
-
-def FlipInvariance(feature):
-    """
-    Flip invariance.
-    :param feature:
-    :return:
-    """
-    return numpy.flip(feature, axis=0)
-
-def RotationInvarianceHELO(alpha_blocks, rotate_type, edge=None):
-    """
-    Extraction HELO with roation invariance.
-    :param alpha_blocks:
-    :param rotate_type: str. ('PC', 'PCA', 'R', 'RAW')
-    :param edge:
-    :return:
-    """
-    if edge is None and rotate_type in ('PCA', 'R'):
-        return alpha_blocks
-    if rotate_type == 'PC':
-        processed_alpha = _RotationInvariancePC(alpha_blocks)
-    elif rotate_type == 'PCA':
-        processed_alpha = _RotationInvariancePCA(alpha_blocks, edge)
-    elif rotate_type == 'R':
-        alpha_pc = _RotationInvariancePC(alpha_blocks)
-        alpha_pca = _RotationInvariancePCA(alpha_blocks, edge)
-        processed_alpha = alpha_pca * 0.3 + alpha_pc * 0.7
-    else:
-        processed_alpha = alpha_blocks
-    return processed_alpha
 
 def DrawNdarray(*args):
     """
@@ -141,6 +101,18 @@ def DrawHELO(*args):
                 x_pair = [base_x + 0.5 * dx1, base_x + 0.5 * dx2]
                 y_pair = [base_y + 0.5 * dy1, base_y + 0.5 * dy2]
                 pylab.plot(x_pair, y_pair, color='blue')
+
+def _GetValidZone(data):
+    """
+    Get valid zone of data.
+    :param data: ndarray.
+    :return:
+    """
+    count_h, count_w = numpy.sum(data, axis=1), numpy.sum(data, axis=0)
+    idx_valid_h, idx_valid_w = numpy.argwhere(count_h > 0), numpy.argwhere(count_w > 0)
+    y_low, y_high = numpy.min(idx_valid_h), numpy.max(idx_valid_h)
+    x_low, x_high = numpy.min(idx_valid_w), numpy.max(idx_valid_w)
+    return data[y_low:y_high+1, x_low:x_high+1]
 
 def _DivideImage(data, W):
     """
@@ -228,6 +200,41 @@ def _FilterBlocks(histogram, image_blocks, threshold_edge_ratio):
             else:
                 filtered_histogram[i, j] = histogram[i, j]
     return filtered_histogram
+
+def _FlipAlphaBlocks(alpha_blocks):
+    """
+    Flip alpha blocks
+    :param alpha_blocks:
+    :return:
+    """
+    h_block_num, w_block_num = alpha_blocks.shape
+    flip_alpha_blocks = numpy.zeros(alpha_blocks.shape)
+    for i in xrange(h_block_num):
+        for j in xrange(w_block_num):
+            flip_alpha_blocks[i][j] = numpy.pi - alpha_blocks[i][w_block_num - 1 - j]
+    return flip_alpha_blocks
+
+def _RotationInvarianceHELO(alpha_blocks, rotate_type, edge=None):
+    """
+    Extraction HELO with roation invariance.
+    :param alpha_blocks:
+    :param rotate_type: str. ('PC', 'PCA', 'R', 'RAW')
+    :param edge:
+    :return:
+    """
+    if edge is None and rotate_type in ('PCA', 'R'):
+        return alpha_blocks
+    if rotate_type == 'PC':
+        processed_alpha = _RotationInvariancePC(alpha_blocks)
+    elif rotate_type == 'PCA':
+        processed_alpha = _RotationInvariancePCA(alpha_blocks, edge)
+    elif rotate_type == 'R':
+        alpha_pc = _RotationInvariancePC(alpha_blocks)
+        alpha_pca = _RotationInvariancePCA(alpha_blocks, edge)
+        processed_alpha = alpha_pca * 0.3 + alpha_pc * 0.7
+    else:
+        processed_alpha = alpha_blocks
+    return processed_alpha
 
 def _ExtractHistFeature(K, processed_alpha_blocks, image_blocks, th_edge_ratio):
     """
