@@ -35,8 +35,8 @@ def ExampleHELO():
 
     :return:
     """
-    # img_file = '.\\images\\1006_guishihei\\100602.jpg'
-    img_file = '.\\images\\1019_guanhu\\101905.jpg'
+    img_file = '.\\images\\1006_guishihei\\100602.jpg'
+    # img_file = '.\\images\\1019_guanhu\\101902.jpg'
     edge, image_ndarray, alpha_blocks, feature_filtered_helo = helo.HELO(img_file, is_sketch=False, draw=True, calc_flip=False)
     print feature_filtered_helo
 
@@ -60,10 +60,10 @@ def ExampleDistHELO():
         print helo_true[-1]
         helo_false = helo.HELO('.\\images\\valve.png', is_sketch=False, rotate_type=rotate_type)
         print helo_false[-1]
-        helo_query_sketch = helo.HELO('.\\images\\airplane_sketch.png', is_sketch=True, rotate_type=rotate_type)
+        helo_query_sketch = helo.HELO('.\\images\\airplane_sketch.png', is_sketch=True, rotate_type=rotate_type, calc_flip=True)
         print helo_query_sketch[-1]
-        print CalL1Distance(helo_query_sketch[-1],helo_true[-1])
-        print CalL1Distance(helo_query_sketch[-1], helo_false[-1])
+        print CalL1DistancePair(helo_query_sketch[-1],helo_true[-1])
+        print CalL1DistancePair(helo_query_sketch[-1], helo_false[-1])
         print '=' * 10
 
 def ExampleDistHELO_PAJ_3_types():
@@ -71,7 +71,7 @@ def ExampleDistHELO_PAJ_3_types():
     Example of testing performance of HELO for PAJ with 3 types.
     :return:
     """
-    rotate_type = 'R'
+    rotate_type = 'PC'
     gsh_fp_list = ['1006_guishihei\\1006.jpg', '1006_guishihei\\100601.jpg', '1006_guishihei\\100602.jpg',
             '1006_guishihei\\100603.jpg']
     gsh_helo_list = []
@@ -89,11 +89,6 @@ def ExampleDistHELO_PAJ_3_types():
         for feat_2 in gsh_guanhu_helo_list:
             print CalL1DistancePair(feat_1[0:2], feat_2[0]),
         print
-    print '-' * 10
-    for feat_1 in gsh_guanhu_helo_list:
-        for feat_2 in gsh_guanhu_helo_list:
-            print CalL1Distance(feat_1[0], feat_2[0], consider_reverse=True),
-        print
 
 def CalL1DistancePair(feat1_pair, feat2):
     """
@@ -104,18 +99,6 @@ def CalL1DistancePair(feat1_pair, feat2):
     """
     d1 = numpy.sum(numpy.fabs(feat1_pair[0] - feat2))
     d2 = numpy.sum(numpy.fabs(feat1_pair[1] - feat2))
-    return min(d1, d2)
-
-def CalL1Distance(feat1, feat2, consider_reverse=False):
-    """
-    L1 distance (also named Manhattan distance)
-    :param feat1: feature 1. 1-D array.
-    :param feat2: feature 2. 1-D array.
-    :param consider_reverse: feature 2. 1-D array.
-    :return: int.
-    """
-    d1 = numpy.sum(numpy.fabs(feat1 - feat2))
-    d2 = numpy.sum(numpy.fabs(helo.FlipInvariance(feat1) - feat2)) if consider_reverse else 9999999
     return min(d1, d2)
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ Date: March 2019.
 import scipy.ndimage
 import numpy
 
-def Canny(img_file, threshold_low=120, threshold_high=180, binary_edge=True):
+def Canny(img_file, threshold_low=50, threshold_high=120, binary_edge=True):
     """
     Canny edge detection.
     :param img_file:
