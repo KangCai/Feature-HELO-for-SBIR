@@ -35,8 +35,7 @@ def ExampleHELO():
 
     :return:
     """
-    img_file = '.\\images\\1006_guishihei\\100602.jpg'
-    # img_file = '.\\images\\1019_guanhu\\101902.jpg'
+    img_file = '.\\images\\airplane.png'
     edge, image_ndarray, alpha_blocks, feature_filtered_helo = helo.HELO(img_file, is_sketch=False, draw=True, calc_flip=False)
     print feature_filtered_helo
 
@@ -57,38 +56,15 @@ def ExampleDistHELO():
     """
     for rotate_type in  ('RAW', 'PCA', 'PC', 'R'):
         helo_true = helo.HELO('.\\images\\airplane.png', is_sketch=False, rotate_type=rotate_type)
-        print helo_true[-1]
+        # print helo_true[-1]
         helo_false = helo.HELO('.\\images\\valve.png', is_sketch=False, rotate_type=rotate_type)
-        print helo_false[-1]
+        # print helo_false[-1]
         helo_query_sketch = helo.HELO('.\\images\\airplane_sketch.png', is_sketch=True, rotate_type=rotate_type, calc_flip=True)
-        print helo_query_sketch[-1]
-        print CalL1DistancePair(helo_query_sketch[-1],helo_true[-1])
-        print CalL1DistancePair(helo_query_sketch[-1], helo_false[-1])
-        print '=' * 10
+        # print helo_query_sketch[-1]
+        print '=' * 10, rotate_type, '=' * 10
+        print 'True pair:', CalL1DistancePair(helo_query_sketch[-1],helo_true[-1])
+        print 'Fakse pair:', CalL1DistancePair(helo_query_sketch[-1], helo_false[-1])
 
-def ExampleDistHELO_PAJ_3_types():
-    """
-    Example of testing performance of HELO for PAJ with 3 types.
-    :return:
-    """
-    rotate_type = 'PC'
-    gsh_fp_list = ['1006_guishihei\\1006.jpg', '1006_guishihei\\100601.jpg', '1006_guishihei\\100602.jpg',
-            '1006_guishihei\\100603.jpg']
-    gsh_helo_list = []
-    for gsh_fp in gsh_fp_list:
-        gsh_helo_list.append(helo.HELO('.\\images\\' + gsh_fp, is_sketch=False, calc_flip=True, rotate_type=rotate_type)[-1])
-    gh_fp_list = ['1019_guanhu\\1019.jpg', '1019_guanhu\\101901.jpg', '1019_guanhu\\101902.jpg',
-                   '1019_guanhu\\101903.jpg', '1019_guanhu\\101904.jpg', '1019_guanhu\\101905.jpg']
-    gh_helo_list = []
-    for gh_fp in gh_fp_list:
-        gh_helo_list.append(helo.HELO('.\\images\\' + gh_fp, is_sketch=False, calc_flip=True, rotate_type=rotate_type)[-1])
-    gsh_guanhu_helo_list = []
-    gsh_guanhu_helo_list.extend(gsh_helo_list)
-    gsh_guanhu_helo_list.extend(gh_helo_list)
-    for feat_1 in gsh_guanhu_helo_list:
-        for feat_2 in gsh_guanhu_helo_list:
-            print CalL1DistancePair(feat_1[0:2], feat_2[0]),
-        print
 
 def CalL1DistancePair(feat1_pair, feat2):
     """
@@ -103,6 +79,6 @@ def CalL1DistancePair(feat1_pair, feat2):
 
 if __name__ == "__main__":
     # ExampleCannyEdgeDetection()
-    ExampleDistHELO_PAJ_3_types()
     # ExampleHELO()
-    # ExampleDistHELO()
+    # ExampleHELOSketch()
+    ExampleDistHELO()
