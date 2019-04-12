@@ -79,6 +79,6 @@ def CalL1DistancePair(feat1_pair, feat2):
 
 if __name__ == "__main__":
     # ExampleCannyEdgeDetection()
-    # ExampleHELO()
+    ExampleHELO()
     # ExampleHELOSketch()
-    ExampleDistHELO()
+    # ExampleDistHELO()

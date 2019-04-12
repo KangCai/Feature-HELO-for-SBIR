@@ -7,6 +7,15 @@ Sketch-Based Image Retrieval"。有任何意见或建议欢迎提出。
 
 ---
 
+### 特征效果
+
+<center>
+<img src="https://kangcai.github.io/img/in-post/post-ml/word_statistic.png" width=15%/>
+</center>
+<center>特征提取过程图</center>
+
+---
+
 ### 运行环境
 
 * Python 2
