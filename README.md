@@ -7,6 +7,14 @@ Orientations for Sketch-Based Image Retrieval". Any suggestions or comments well
 
 ---
 
+### Performance
+
+In the process of feature extraction, the temporary generated data can be shown as images below, 
+
+<img src="https://raw.githubusercontent.com/KangCai/Feature-HELO-for-SBIR/master/results/helo_airplane.png"/>
+
+---
+
 ### Environment
 
 * Python 2

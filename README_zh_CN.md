@@ -11,10 +11,7 @@ Sketch-Based Image Retrieval"。有任何意见或建议欢迎提出。
 
 特征提取过程中，产生的中间图像如下组图所示，
 
-<center>
 <img src="https://raw.githubusercontent.com/KangCai/Feature-HELO-for-SBIR/master/results/helo_airplane.png"/>
-</center>
-<center>特征提取过程图</center>
 
 ---
 
