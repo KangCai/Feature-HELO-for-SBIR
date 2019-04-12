@@ -9,8 +9,15 @@ Sketch-Based Image Retrieval"。有任何意见或建议欢迎提出。
 
 ### 特征效果
 
+特征提取过程中，产生的中间图像如下组图所示，
+
 <center>
-<img src="https://kangcai.github.io/img/in-post/post-ml/word_statistic.png" width=15%/>
+<img src="https://raw.githubusercontent.com/KangCai/Feature-HELO-for-SBIR/master/results/ap1.png" width=18.5%/>
+<img src="https://raw.githubusercontent.com/KangCai/Feature-HELO-for-SBIR/master/results/ap2_gray.png" width=15%/>
+<img src="https://raw.githubusercontent.com/KangCai/Feature-HELO-for-SBIR/master/results/ap3_canny.png" width=15%/>
+<img src="https://raw.githubusercontent.com/KangCai/Feature-HELO-for-SBIR/master/results/ap4_alpha_blocks.png" width=15%/>
+<img src="https://raw.githubusercontent.com/KangCai/Feature-HELO-for-SBIR/master/results/ap5_histogram.png" width=15%/>
+<img src="https://raw.githubusercontent.com/KangCai/Feature-HELO-for-SBIR/master/results/ap6_salient_histogram.png" width=15%/>
 </center>
 <center>特征提取过程图</center>
 
